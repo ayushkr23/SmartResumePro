@@ -22,7 +22,7 @@ RESOURCES_DIR="resources"
 
 # JavaFX configuration (adjust paths as needed)
 JAVAFX_VERSION="17.0.2"
-JAVAFX_PATH="${JAVAFX_HOME:-/usr/share/openjfx}"
+JAVAFX_PATH="${JAVAFX_HOME:-/usr/share/java}"
 
 print_header() {
     echo -e "${BLUE}"
@@ -63,7 +63,7 @@ check_prerequisites() {
     fi
     
     # Check if JavaFX is available
-    if [ ! -d "$JAVAFX_PATH" ]; then
+    if [ ! -f "$JAVAFX_PATH/javafx-controls-11.jar" ]; then
         print_error "JavaFX not found at $JAVAFX_PATH"
         echo "Please set JAVAFX_HOME environment variable or install JavaFX"
         echo "Download from: https://openjfx.io/"
@@ -117,10 +117,12 @@ compile_application() {
     fi
     
     # Compile with JavaFX modules
+    # Build classpath with JavaFX JAR files
+    JAVAFX_CLASSPATH="$JAVAFX_PATH/javafx-base-11.jar:$JAVAFX_PATH/javafx-controls-11.jar:$JAVAFX_PATH/javafx-fxml-11.jar:$JAVAFX_PATH/javafx-graphics-11.jar"
+    FULL_CLASSPATH="$CLASSPATH:$JAVAFX_CLASSPATH"
+    
     javac \
-        --module-path "$JAVAFX_PATH/lib" \
-        --add-modules javafx.controls,javafx.fxml \
-        -cp "$CLASSPATH" \
+        -cp "$FULL_CLASSPATH" \
         -d "$OUTPUT_DIR" \
         $JAVA_FILES
     
@@ -146,6 +148,9 @@ copy_resources() {
 create_manifest() {
     print_step "Creating manifest..."
     
+    # Create META-INF directory if it doesn't exist
+    mkdir -p "$OUTPUT_DIR/META-INF"
+    
     cat > "$OUTPUT_DIR/META-INF/MANIFEST.MF" << EOF
 Manifest-Version: 1.0
 Main-Class: $MAIN_CLASS
@@ -158,10 +163,12 @@ EOF
 run_application() {
     print_step "Starting application..."
     
+    # Build runtime classpath with JavaFX JAR files
+    JAVAFX_CLASSPATH="$JAVAFX_PATH/javafx-base-11.jar:$JAVAFX_PATH/javafx-controls-11.jar:$JAVAFX_PATH/javafx-fxml-11.jar:$JAVAFX_PATH/javafx-graphics-11.jar"
+    RUNTIME_CLASSPATH="$OUTPUT_DIR:$LIB_DIR/*:$JAVAFX_CLASSPATH"
+    
     java \
-        --module-path "$JAVAFX_PATH/lib" \
-        --add-modules javafx.controls,javafx.fxml \
-        -cp "$OUTPUT_DIR:$LIB_DIR/*" \
+        -cp "$RUNTIME_CLASSPATH" \
         "$MAIN_CLASS"
 }
 
