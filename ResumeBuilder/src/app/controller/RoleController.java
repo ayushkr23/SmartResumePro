@@ -60,20 +60,46 @@ public class RoleController implements Initializable {
         // Initially disable continue button
         continueButton.setDisable(true);
         
-        logger.info("Role selector initialized");
+        // Fallback: if no cards were created, force create default ones
+        if (roleCards.isEmpty()) {
+            logger.warning("No role cards were created, forcing default data creation");
+            createDefaultRoleData();
+            createRoleCards();
+        }
+        
+        // Emergency fallback: create simple test cards if still empty
+        if (roleCardsContainer.getChildren().isEmpty()) {
+            logger.warning("FlowPane still empty, creating emergency test cards");
+            createEmergencyCards();
+        }
+        
+        // Final check
+        logger.info("Role selector initialized with " + roleCards.size() + " cards");
+        logger.info("FlowPane children count: " + roleCardsContainer.getChildren().size());
     }
     
     private void loadRoleData() {
         try (InputStream is = getClass().getResourceAsStream("/data/role_data.json")) {
             if (is != null) {
                 String jsonContent = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                logger.info("JSON content loaded, length: " + jsonContent.length());
+                logger.info("JSON preview: " + jsonContent.substring(0, Math.min(200, jsonContent.length())));
+                
                 rolesData = parseJson(jsonContent);
-                logger.info("Role data loaded successfully");
+                
+                if (rolesData != null && rolesData.containsKey("roles")) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> roles = (List<Map<String, Object>>) rolesData.get("roles");
+                    logger.info("Loaded " + (roles != null ? roles.size() : 0) + " roles from JSON");
+                } else {
+                    logger.warning("Invalid JSON structure, using default data");
+                    createDefaultRoleData();
+                }
             } else {
-                logger.warning("Role data file not found, using default data");
+                logger.warning("Role data file not found at /data/role_data.json, using default data");
                 createDefaultRoleData();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to load role data, using defaults", e);
             createDefaultRoleData();
         }
@@ -152,6 +178,7 @@ public class RoleController implements Initializable {
     }
     
     private void createDefaultRoleData() {
+        logger.info("Creating default role data");
         rolesData = new HashMap<>();
         List<Map<String, Object>> roles = new ArrayList<>();
         
@@ -179,8 +206,125 @@ public class RoleController implements Initializable {
         dataAnalyst.put("objective_template", "Detail-oriented Data Analyst passionate about transforming raw data into actionable insights.");
         roles.add(dataAnalyst);
         
-        // Add more default roles...
+        // Digital Marketer
+        Map<String, Object> digitalMarketer = new HashMap<>();
+        digitalMarketer.put("id", "digital_marketer");
+        digitalMarketer.put("name", "Digital Marketer");
+        digitalMarketer.put("icon", "📱");
+        digitalMarketer.put("description", "Create and manage digital marketing campaigns");
+        digitalMarketer.put("skills", Arrays.asList("Social Media", "SEO", "Google Analytics", "Content Marketing", "Email Marketing"));
+        digitalMarketer.put("tips", Arrays.asList("Show campaign results with metrics", "Highlight social media growth"));
+        digitalMarketer.put("projects", Arrays.asList("Social Media Campaign", "SEO Strategy", "Email Newsletter"));
+        digitalMarketer.put("objective_template", "Creative Digital Marketer passionate about driving brand growth through innovative online strategies.");
+        roles.add(digitalMarketer);
+        
+        // Business Analyst
+        Map<String, Object> businessAnalyst = new HashMap<>();
+        businessAnalyst.put("id", "business_analyst");
+        businessAnalyst.put("name", "Business Analyst");
+        businessAnalyst.put("icon", "📈");
+        businessAnalyst.put("description", "Bridge business needs with technology solutions");
+        businessAnalyst.put("skills", Arrays.asList("Requirements Analysis", "Process Mapping", "SQL", "Excel", "Business Intelligence"));
+        businessAnalyst.put("tips", Arrays.asList("Show process improvements with metrics", "Highlight stakeholder management"));
+        businessAnalyst.put("projects", Arrays.asList("Process Optimization", "Requirements Documentation", "Business Intelligence Dashboard"));
+        businessAnalyst.put("objective_template", "Analytical Business Analyst focused on optimizing processes and driving business value through data-driven insights.");
+        roles.add(businessAnalyst);
+        
+        // UI/UX Designer
+        Map<String, Object> uxDesigner = new HashMap<>();
+        uxDesigner.put("id", "ux_designer");
+        uxDesigner.put("name", "UI/UX Designer");
+        uxDesigner.put("icon", "🎨");
+        uxDesigner.put("description", "Design user-friendly interfaces and experiences");
+        uxDesigner.put("skills", Arrays.asList("Figma", "Adobe XD", "Prototyping", "User Research", "Wireframing", "Design Systems"));
+        uxDesigner.put("tips", Arrays.asList("Create a strong portfolio", "Show design thinking process", "Include user research insights"));
+        uxDesigner.put("projects", Arrays.asList("Mobile App Design", "Website Redesign", "Design System", "User Experience Study"));
+        uxDesigner.put("objective_template", "Creative UI/UX Designer passionate about crafting intuitive user experiences through thoughtful design and user research.");
+        roles.add(uxDesigner);
+        
         rolesData.put("roles", roles);
+        logger.info("Created " + roles.size() + " default roles");
+    }
+    
+    private void createEmergencyCards() {
+        logger.info("Creating emergency role cards");
+        roleCardsContainer.getChildren().clear();
+        
+        // Create simple test cards that are guaranteed to be visible
+        String[] roles = {"Software Developer", "Data Analyst", "Digital Marketer", "Business Analyst", "UI/UX Designer"};
+        String[] icons = {"💻", "📊", "📱", "📈", "🎨"};
+        String[] descriptions = {
+            "Build applications and websites",
+            "Analyze data for insights", 
+            "Create digital marketing campaigns",
+            "Bridge business needs with technology",
+            "Design user-friendly interfaces"
+        };
+        
+        for (int i = 0; i < roles.length; i++) {
+            VBox card = new VBox();
+            card.setPrefSize(200, 180);
+            card.setMinSize(200, 180);
+            card.setMaxSize(200, 180);
+            card.setAlignment(Pos.CENTER);
+            card.setSpacing(12);
+            
+            // Strong styling to ensure visibility
+            card.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-border-color: #2563eb; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 16; " +
+                "-fx-background-radius: 16; " +
+                "-fx-padding: 20; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 8, 0, 0, 2);"
+            );
+            
+            // Icon
+            Label icon = new Label(icons[i]);
+            icon.setStyle("-fx-font-size: 48px;");
+            
+            // Name
+            Label name = new Label(roles[i]);
+            name.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+            name.setWrapText(true);
+            name.setMaxWidth(180);
+            
+            // Description
+            Label description = new Label(descriptions[i]);
+            description.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+            description.setWrapText(true);
+            description.setMaxWidth(180);
+            
+            card.getChildren().addAll(icon, name, description);
+            
+            // Add click handler
+            final String roleId = "emergency_" + i;
+            final String roleName = roles[i];
+            card.setOnMouseClicked(event -> {
+                // Remove selection from all cards
+                for (javafx.scene.Node node : roleCardsContainer.getChildren()) {
+                    node.getStyleClass().remove("role-card-selected");
+                }
+                
+                // Add selection to clicked card
+                card.setStyle(card.getStyle() + "-fx-border-color: #1d4ed8; -fx-border-width: 3;");
+                
+                selectedRoleId = roleId;
+                selectedRoleLabel.setText("Selected: " + roleName);
+                continueButton.setDisable(false);
+                
+                // Update resume data
+                resumeData.setSelectedRole(roleName);
+                resumeData.setObjective("Aspiring " + roleName + " seeking to contribute to innovative projects while growing professional expertise.");
+                
+                logger.info("Emergency role selected: " + roleName);
+            });
+            
+            roleCardsContainer.getChildren().add(card);
+        }
+        
+        logger.info("Emergency cards created: " + roleCardsContainer.getChildren().size());
     }
     
     @SuppressWarnings("unchecked")
@@ -188,14 +332,32 @@ public class RoleController implements Initializable {
         roleCardsContainer.getChildren().clear();
         roleCards.clear();
         
+        if (rolesData == null) {
+            logger.warning("Roles data is null, creating default data");
+            createDefaultRoleData();
+        }
+        
         List<Map<String, Object>> roles = (List<Map<String, Object>>) rolesData.get("roles");
-        if (roles == null) return;
+        if (roles == null || roles.isEmpty()) {
+            logger.warning("No roles found in data, creating default roles");
+            createDefaultRoleData();
+            roles = (List<Map<String, Object>>) rolesData.get("roles");
+        }
+        
+        logger.info("Creating " + roles.size() + " role cards");
         
         for (Map<String, Object> role : roles) {
-            VBox roleCard = createRoleCard(role);
-            roleCards.add(roleCard);
-            roleCardsContainer.getChildren().add(roleCard);
+            try {
+                VBox roleCard = createRoleCard(role);
+                roleCards.add(roleCard);
+                roleCardsContainer.getChildren().add(roleCard);
+                logger.info("Created card for role: " + role.get("name"));
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to create card for role: " + role.get("name"), e);
+            }
         }
+        
+        logger.info("Total role cards created: " + roleCards.size());
     }
     
     private VBox createRoleCard(Map<String, Object> role) {
@@ -204,28 +366,48 @@ public class RoleController implements Initializable {
         card.setSpacing(12);
         card.setPrefWidth(200);
         card.setPrefHeight(180);
-        card.getStyleClass().addAll("role-card");
+        card.setMinWidth(200);
+        card.setMinHeight(180);
+        card.setMaxWidth(200);
+        card.setMaxHeight(180);
+        card.getStyleClass().add("role-card");
+        
+        // Ensure the card is visible with a fallback background color
+        if (card.getBackground() == null) {
+            card.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 16; -fx-border-radius: 16;");
+        }
         
         // Icon
         Label icon = new Label((String) role.get("icon"));
         icon.getStyleClass().add("role-icon");
+        if (icon.getFont() == null) {
+            icon.setStyle("-fx-font-size: 48px;");
+        }
         
         // Name
         Label name = new Label((String) role.get("name"));
         name.getStyleClass().add("role-name");
         name.setWrapText(true);
         name.setMaxWidth(180);
+        if (name.getFont() == null) {
+            name.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+        }
         
         // Description
         Label description = new Label((String) role.get("description"));
         description.getStyleClass().add("role-description");
         description.setWrapText(true);
         description.setMaxWidth(180);
+        if (description.getFont() == null) {
+            description.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+        }
         
         card.getChildren().addAll(icon, name, description);
         
         // Add click handler
         card.setOnMouseClicked(event -> selectRole((String) role.get("id"), role, card));
+        
+        logger.info("Created role card for: " + role.get("name") + " with size: " + card.getPrefWidth() + "x" + card.getPrefHeight());
         
         return card;
     }
